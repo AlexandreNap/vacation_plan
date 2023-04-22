@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Vacation Map</title>
+	<style>
+		body {
+			background-color:  rgba(30, 184, 255, 0.58);
+			color: #000000;
+			font-family: Arial, sans-serif;
+			font-size: 18px;
+		}
+
+		h1 {
+			font-size: 36px;
+			text-align: center;
+			margin-top: 36px;
+		}
+
+		#input-box {
+			background-color: rgba(255, 184, 226, 0.95);
+			border: 2px solid #000000;
+			border-radius: 5px;
+			padding: 20px;
+			margin: 0 auto;
+			width: 50%;
+ 			margin-bottom: 20px;
+		}
+
+		#input-place {
+			width: 100%;
+			height: 22px;
+			font-size: 18px;
+            color: rgba(27, 111, 129, 0.58);
+			resize: none;
+			outline: none;
+			border: 4px solid rgb(235, 243, 0);
+			border-radius: 5px;
+		}
+		#input-ndays {
+			width: 15%;
+			height: 22px;
+			font-size: 18px;
+            color: rgba(27, 111, 129, 0.58);
+			resize: none;
+			outline: none;
+			border: 4px solid rgb(235, 243, 0);
+			border-radius: 5px;
+		}
+
+		#input-description {
+			width: 100%;
+			height: 100px;
+			font-size: 18px;
+            color: rgba(27, 111, 129, 0.58);
+			resize: none;
+			outline: none;
+			border: 4px solid rgb(235, 243, 0);
+			border-radius: 5px;
+		}
+
+		#submit-button {
+			background-color: rgba(30, 184, 255, 0.58);
+			border: none;
+			border-radius: 5px;
+			color: rgb(235, 243, 0);
+			cursor: pointer;
+			display: block;
+			font-size: 24px;
+			margin: 20px auto;
+			padding: 10px 20px;
+			text-align: center;
+			width: 200px;
+		}
+
+		#loader {
+			display: none;
+			border: 16px solid rgba(255, 184, 226, 0.95);
+			border-top: 16px solid rgb(235, 243, 0);
+			border-radius: 50%;
+			width: 120px;
+			height: 120px;
+			animation: spin 0.5s linear infinite;
+			margin: 50px auto;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		#result {
+			width: 100%;
+			height: 100vh;
+  			margin: 0 auto;
+		}
+		#result-display {
+			display: none;
+		}
+
+		#program-data {
+			background-color: rgb(255, 255, 255);
+			color: rgba(27, 111, 129, 0.58);
+			outline: 10px solid rgb(235, 243, 0);
+			border-radius: 5px;
+			margin: 0 auto;
+			width: 90%;
+			margin-bottom: 20px;
+		}
+
+		#map-frame {
+			border: 10px solid rgb(235, 243, 0);
+			border-radius: 5px;
+			display: block;
+			margin: 0 auto;
+			width: 90%;
+			height: 90vh;
+		}
+
+
+	</style>
+</head>
+<body>
+	<h1>Vacation Map</h1>
+
+	<div id="input-box">
+		<p>Enter your vacation place:</p>
+		<textarea id="input-place" name="input_place">New-York, Manhattan</textarea>
+		<p>Enter your vacation number of days:</p>
+		<input type="number" id="input-ndays" name="input_ndays" min="1" max="7" value="1"><br>
+		<p>Enter what you are looking for / who you are:</p>
+		<textarea type="string" id="input-description" name="input_description">Je viens avec ma copine en septembre.
+On aime bien prendre le temps de se ballader, manger, faire des achats. On préfère la visite de quartiers populaires et faire des photos aux visites touristiques trop classiques.</textarea>
+		<button id="submit-button" onclick="generateMap()">Generate Map</button>
+	</div>
+
+	<div id="result">
+		<div id="loader"></div>
+		<div id="result-display">
+			<div id="program-data"></div>
+			<iframe id="map-frame"></iframe>
+		</div>
+	</div>
+
+
+	<script>
+		function generateMap() {
+			document.getElementById("loader").style.display = "block";
+			document.getElementById("result-display").style.display = "none";
+			const place = document.getElementById("input-place").value;
+			const description = document.getElementById("input-description").value;
+			const nDays = document.getElementById("input-ndays").value;
+			const endpointUrl = 'http://127.0.0.1:8000/generate_map';
+
+			const submitButton = document.getElementById('submit-button');
+			submitButton.disabled = true;
+			submitButton.style.color = 'rgb(232,56,17)';
+
+			const data = {place: place, description: description, n_days: nDays};
+			fetch(endpointUrl, {
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify(data),
+			})
+			.then(response => response.json())
+			.then(data => {
+				const mapFrame = document.getElementById("map-frame");
+				const doc = new DOMParser().parseFromString(data["html"], "text/html");
+				mapFrame.srcdoc = doc.documentElement.innerHTML;
+
+				document.getElementById("result-display").style.display = "block";
+
+				const programData = document.getElementById("program-data");
+				programData.innerHTML = "";
+				let currentDay = "";
+				for (let i = 0; i < data["program"].length; i++) {
+					const programItem = data["program"][i];
+					if (programItem.day != currentDay) {
+						currentDay = programItem.day;
+						const programItemDiv = document.createElement("div");
+						programItemDiv.innerHTML = `
+						<h2>Jour ${currentDay.split("_").pop()}</h2>
+						`;
+						programData.appendChild(programItemDiv);
+					}
+					const programItemDiv = document.createElement("div");
+					programItemDiv.innerHTML = `
+						<h3>${programItem.temps} - ${programItem.nom}</h3>
+						<p>${programItem.description}</p>
+					`;
+					programData.appendChild(programItemDiv);
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+			})
+			.finally(() => {
+				document.getElementById("loader").style.display = "none";
+				submitButton.disabled = false;
+				submitButton.style.color = 'rgb(235, 243, 0)';
+			});
+		}
+	</script>
+</body>
+</html>

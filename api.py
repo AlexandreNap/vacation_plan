@@ -35,3 +35,7 @@ async def generate_map_endpoint(request: MapRequest):
     return {"html": map_html, "program": program}
 
 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

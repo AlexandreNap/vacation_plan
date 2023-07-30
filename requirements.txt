@@ -1,3 +1,5 @@
 openai
 folium
 googlemaps
+fastapi
+uvicorn

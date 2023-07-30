@@ -136,7 +136,7 @@ def ask_program(place, n_days, description):
     return program
 
 
-def make_map(program, n_days):
+def make_map(program, n_days, cache=False):
     coordinates = program
     map = folium.Map(location=[np.median([coords['location']['lat'] for
                                           coords in coordinates if "location" in list(coords.keys())]),
@@ -177,5 +177,6 @@ def make_map(program, n_days):
     map.save(map_file_name)
     with open(map_file_name, "r") as f:
         html_content = f.read()
-    os.remove(map_file_name)
+    if not cache:
+        os.remove(map_file_name)
     return html_content
